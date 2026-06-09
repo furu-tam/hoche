@@ -52,7 +52,7 @@ export const GRADE_CURRICULUM: Record<Grade, ModuleInfo[]> = {
     { id: "fractions", label: "Phân số nâng cao", icon: "🍕", description: "So sánh và rút gọn", dailyCount: 2 },
     { id: "decimals", label: "Số thập phân", icon: "🔢", description: "Cộng trừ số thập phân", dailyCount: 1 },
     { id: "percent", label: "Phần trăm", icon: "💯", description: "Tính phần trăm cơ bản", dailyCount: 1 },
-    { id: "unit_conversion", label: "Đổi đơn vị", icon: "⚖️", description: "Độ dài, khối lượng, diện tích, thể tích", dailyCount: 2 },
+    { id: "unit_conversion", label: "Đổi đơn vị", icon: "⚖️", description: "Độ dài, khối lượng, thời gian, vận tốc", dailyCount: 2 },
     { id: "geometry", label: "Hình học", icon: "📐", description: "Công thức chu vi, diện tích, thể tích", dailyCount: 2 },
     { id: "word_problem", label: "Bài toán nâng cao", icon: "📝", description: "Bài toán tổng hợp", dailyCount: 2 },
   ],

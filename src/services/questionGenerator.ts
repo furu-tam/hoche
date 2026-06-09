@@ -335,8 +335,10 @@ function genGeometry(grade: Grade, difficulty: Difficulty): MathQuestion {
   return genGeometryCalc(grade, difficulty);
 }
 
+type UnitConversionItem = { prompt: string; answer: number; explanation: string };
+
 function genUnitConversion(difficulty: Difficulty): MathQuestion {
-  const templates: (() => { prompt: string; answer: number; explanation: string; unit: string })[] = [
+  const lengthWeight: (() => UnitConversionItem)[] = [
     () => {
       const km = randInt(1, difficulty === 1 ? 3 : 5);
       const m = randInt(100, 900);
@@ -345,7 +347,6 @@ function genUnitConversion(difficulty: Difficulty): MathQuestion {
         prompt: `${km} km ${m} m = ? m`,
         answer,
         explanation: `${km} km = ${km * 1000} m, cộng ${m} m → ${answer} m`,
-        unit: "m",
       };
     },
     () => {
@@ -354,8 +355,7 @@ function genUnitConversion(difficulty: Difficulty): MathQuestion {
       return {
         prompt: `${m} m = ? cm`,
         answer,
-        explanation: `1 m = 100 cm → ${m} m = ${m} × 100 = ${answer} cm`,
-        unit: "cm",
+        explanation: `1 m = 100 cm → ${m} m = ${answer} cm`,
       };
     },
     () => {
@@ -366,7 +366,6 @@ function genUnitConversion(difficulty: Difficulty): MathQuestion {
         prompt: `${kg} kg ${g} g = ? g`,
         answer,
         explanation: `${kg} kg = ${kg * 1000} g, cộng ${g} g → ${answer} g`,
-        unit: "g",
       };
     },
     () => {
@@ -376,7 +375,6 @@ function genUnitConversion(difficulty: Difficulty): MathQuestion {
         prompt: `${tons} tấn = ? kg`,
         answer,
         explanation: `1 tấn = 1000 kg → ${tons} tấn = ${answer} kg`,
-        unit: "kg",
       };
     },
     () => {
@@ -386,7 +384,6 @@ function genUnitConversion(difficulty: Difficulty): MathQuestion {
         prompt: `${m2} m² = ? dm²`,
         answer,
         explanation: `1 m² = 100 dm² → ${m2} m² = ${answer} dm²`,
-        unit: "dm²",
       };
     },
     () => {
@@ -396,7 +393,6 @@ function genUnitConversion(difficulty: Difficulty): MathQuestion {
         prompt: `${liters} l = ? ml`,
         answer,
         explanation: `1 l = 1000 ml → ${liters} l = ${answer} ml`,
-        unit: "ml",
       };
     },
     () => {
@@ -406,7 +402,18 @@ function genUnitConversion(difficulty: Difficulty): MathQuestion {
         prompt: `${dm3} dm³ = ? cm³`,
         answer,
         explanation: `1 dm³ = 1000 cm³ → ${dm3} dm³ = ${answer} cm³`,
-        unit: "cm³",
+      };
+    },
+  ];
+
+  const time: (() => UnitConversionItem)[] = [
+    () => {
+      const hours = randInt(1, difficulty === 1 ? 3 : 5);
+      const answer = hours * 60;
+      return {
+        prompt: `${hours} giờ = ? phút`,
+        answer,
+        explanation: `1 giờ = 60 phút → ${hours} giờ = ${answer} phút`,
       };
     },
     () => {
@@ -417,20 +424,131 @@ function genUnitConversion(difficulty: Difficulty): MathQuestion {
         prompt: `${hours} giờ ${minutes} phút = ? phút`,
         answer,
         explanation: `${hours} giờ = ${hours * 60} phút, cộng ${minutes} phút → ${answer} phút`,
-        unit: "phút",
+      };
+    },
+    () => {
+      const minutes = randInt(2, difficulty === 1 ? 10 : 20);
+      const answer = minutes * 60;
+      return {
+        prompt: `${minutes} phút = ? giây`,
+        answer,
+        explanation: `1 phút = 60 giây → ${minutes} phút = ${answer} giây`,
+      };
+    },
+    () => {
+      const days = randInt(1, difficulty === 1 ? 2 : 4);
+      const answer = days * 24;
+      return {
+        prompt: `${days} ngày = ? giờ`,
+        answer,
+        explanation: `1 ngày = 24 giờ → ${days} ngày = ${answer} giờ`,
+      };
+    },
+    () => {
+      const days = randInt(1, 2);
+      const hours = randInt(1, 12);
+      const answer = days * 24 + hours;
+      return {
+        prompt: `${days} ngày ${hours} giờ = ? giờ`,
+        answer,
+        explanation: `${days} ngày = ${days * 24} giờ, cộng ${hours} giờ → ${answer} giờ`,
+      };
+    },
+    () => {
+      const hours = randInt(1, 2);
+      const answer = hours * 3600;
+      return {
+        prompt: `${hours} giờ = ? giây`,
+        answer,
+        explanation: `1 giờ = 3600 giây → ${hours} giờ = ${answer} giây`,
+      };
+    },
+    () => {
+      const hours = 1;
+      const minutes = randInt(1, 3) * 30;
+      const answer = hours * 3600 + minutes * 60;
+      return {
+        prompt: `${hours} giờ ${minutes} phút = ? giây`,
+        answer,
+        explanation: `${hours} giờ = 3600 giây, ${minutes} phút = ${minutes * 60} giây → ${answer} giây`,
       };
     },
   ];
 
-  const pool =
-    difficulty === 1 ? templates.slice(0, 4) : difficulty === 2 ? templates.slice(0, 6) : templates;
-  const t = pool[randInt(0, pool.length - 1)]();
+  const speedPairs: [number, number][] = [
+    [5, 18],
+    [10, 36],
+    [15, 54],
+    [20, 72],
+  ];
+
+  const velocity: (() => UnitConversionItem)[] = [
+    () => {
+      const pair = speedPairs[randInt(0, difficulty === 1 ? 1 : speedPairs.length - 1)];
+      const [ms, kmh] = pair;
+      return {
+        prompt: `${ms} m/giây = ? km/giờ`,
+        answer: kmh,
+        explanation: `1 m/giây = 3,6 km/giờ → ${ms} m/giây = ${kmh} km/giờ`,
+      };
+    },
+    () => {
+      const pair = speedPairs[randInt(0, speedPairs.length - 1)];
+      const [ms, kmh] = pair;
+      return {
+        prompt: `${kmh} km/giờ = ? m/giây`,
+        answer: ms,
+        explanation: `1 km/giờ = 1000 m ÷ 3600 giây → ${kmh} km/giờ = ${ms} m/giây`,
+      };
+    },
+    () => {
+      const mpm = [60, 120, 180, 300, 600][randInt(0, difficulty === 1 ? 2 : 4)];
+      const answer = mpm / 60;
+      return {
+        prompt: `${mpm} m/phút = ? m/giây`,
+        answer,
+        explanation: `1 phút = 60 giây → ${mpm} m/phút = ${mpm} ÷ 60 = ${answer} m/giây`,
+      };
+    },
+    () => {
+      const kmhOptions = [12, 30, 60];
+      const kmh = kmhOptions[randInt(0, kmhOptions.length - 1)];
+      const answer = (kmh * 1000) / 60;
+      return {
+        prompt: `${kmh} km/giờ = ? m/phút`,
+        answer,
+        explanation: `${kmh} km = ${kmh * 1000} m trong 60 phút → ${answer} m/phút`,
+      };
+    },
+    () => {
+      const ms = randInt(2, 8);
+      const mpm = ms * 60;
+      return {
+        prompt: `${ms} m/giây = ? m/phút`,
+        answer: mpm,
+        explanation: `1 giây = 1/60 phút → ${ms} m/giây = ${ms} × 60 = ${mpm} m/phút`,
+      };
+    },
+  ];
+
+  const pools =
+    difficulty === 1
+      ? [...lengthWeight.slice(0, 3), ...time.slice(0, 2), ...velocity.slice(0, 1)]
+      : difficulty === 2
+        ? [...lengthWeight.slice(0, 5), ...time.slice(0, 5), ...velocity.slice(0, 3)]
+        : [...lengthWeight, ...time, ...velocity];
+
+  const t = pools[randInt(0, pools.length - 1)]();
+  const spread = t.answer >= 1000 ? 500 : t.answer >= 100 ? 50 : 10;
   return {
     type: "math",
     module: "unit_conversion",
     difficulty,
     promptText: t.prompt,
-    options: buildMcq(t.answer, uniqueDistractors(t.answer, 3, () => t.answer + randInt(-200, 200))),
+    options: buildMcq(
+      t.answer,
+      uniqueDistractors(t.answer, 3, () => t.answer + randInt(-spread, spread))
+    ),
     answer: String(t.answer),
     explanation: t.explanation,
   };
