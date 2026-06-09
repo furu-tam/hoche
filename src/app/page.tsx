@@ -14,6 +14,7 @@ import {
   isTopicBasedGrade,
   type Grade,
 } from "@/types/curriculum";
+import { prefetchQuestionGenerator } from "@/services/examQuestions";
 import { ALL_GRADE1_TOPIC_IDS } from "@/types/grade1Curriculum";
 import { ALL_GRADE5_TOPIC_IDS } from "@/types/grade5Curriculum";
 
@@ -27,6 +28,10 @@ export default function HomePage() {
   useEffect(() => {
     resetDailyIfNewDay();
   }, [resetDailyIfNewDay]);
+
+  useEffect(() => {
+    prefetchQuestionGenerator(profile.grade);
+  }, [profile.grade]);
 
   const { xp, coins, level, streak, dailyProgress, dailyComplete } = profile;
   const done = dailyTotalProgress(dailyProgress);

@@ -30,13 +30,34 @@ export function uniqueDistractors(
   return [...set].map(String);
 }
 
+function fastDistractors(answer: number, spread: number, count = 3): number[] {
+  const deltas = [spread, -spread, spread * 2, -spread * 2, 1, -1, 2, -2, 5, -5];
+  const result: number[] = [];
+  for (const d of deltas) {
+    const v = answer + d;
+    if (v !== answer && v >= 0 && !result.includes(v)) result.push(v);
+    if (result.length >= count) break;
+  }
+  let n = 1;
+  while (result.length < count && n < 100) {
+    const v = answer + spread + n;
+    if (v !== answer && !result.includes(v)) result.push(v);
+    n++;
+  }
+  return result.slice(0, count);
+}
+
 export function mcqNumber(
   answer: number,
   spread = 10
 ): { options: string[]; answer: string } {
+  const distractors =
+    spread > 50
+      ? fastDistractors(answer, spread).map(String)
+      : uniqueDistractors(answer, 3, () => answer + randInt(-spread, spread));
   return {
     answer: String(answer),
-    options: buildMcq(answer, uniqueDistractors(answer, 3, () => answer + randInt(-spread, spread))),
+    options: buildMcq(answer, distractors),
   };
 }
 

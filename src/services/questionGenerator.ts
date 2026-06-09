@@ -1,9 +1,5 @@
 import type { Grade, MathModule } from "@/types/curriculum";
-import type { Grade1TopicId } from "@/types/grade1Curriculum";
-import type { Grade5TopicId } from "@/types/grade5Curriculum";
 import type { Difficulty, MathQuestion } from "@/types/question";
-import { generateGrade1Question } from "@/services/grade1QuestionGenerator";
-import { generateGrade5Question } from "@/services/grade5QuestionGenerator";
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -653,20 +649,6 @@ function genPercent(difficulty: Difficulty): MathQuestion {
     answer: String(answer),
     explanation: `${pct}% × ${base} = ${answer}`,
   };
-}
-
-export function generateQuestion(
-  topicId: string,
-  difficulty: Difficulty,
-  grade: Grade
-): MathQuestion {
-  if (grade === 1 && topicId.startsWith("g1_")) {
-    return generateGrade1Question(topicId as Grade1TopicId, difficulty);
-  }
-  if (grade === 5 && topicId.startsWith("g5_")) {
-    return generateGrade5Question(topicId as Grade5TopicId, difficulty);
-  }
-  return generateMathQuestion(topicId as MathModule, difficulty, grade);
 }
 
 export function generateMathQuestion(
