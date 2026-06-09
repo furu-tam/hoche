@@ -30,7 +30,7 @@ export function MathQuiz({ question, questionLabel, onAnswer }: MathQuizProps) {
   return (
     <div className="flex flex-1 flex-col">
       <p className="text-center text-sm font-bold text-mq-primary">
-        {MODULE_LABELS[question.module]}
+        {question.topicLabel ?? MODULE_LABELS[question.module]}
       </p>
       <p className="mb-5 text-center text-sm text-mq-muted">
         {questionLabel} · {DIFFICULTY_LABEL[question.difficulty]}

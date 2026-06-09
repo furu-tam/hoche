@@ -5,6 +5,8 @@ export type Difficulty = 1 | 2 | 3;
 export interface MathQuestion {
   type: "math";
   module: MathModule;
+  topicId?: string;
+  topicLabel?: string;
   difficulty: Difficulty;
   promptText: string;
   options: string[];

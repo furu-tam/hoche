@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/ui/AppShell";
 import { useAppStore } from "@/store/appStore";
 import { computeModuleScores } from "@/utils/skillStats";
-import { getModulesForGrade, MODULE_LABELS } from "@/types/curriculum";
+import { getModulesForGrade, GRADE5_CURRICULUM, MODULE_LABELS } from "@/types/curriculum";
 
 export default function ParentPage() {
   const profiles = useAppStore((s) => s.profiles);
@@ -71,14 +71,37 @@ export default function ParentPage() {
                   Streak {p.streak} ngày · Độ chính xác {acc}% · {p.dailyCompleteCount} đề hoàn thành
                 </p>
                 <ul className="text-sm">
-                  {modules.map((m) => {
-                    const s = scores[m.id];
-                    return (
-                      <li key={m.id} className="text-mq-muted">
-                        {MODULE_LABELS[m.id]}: {s?.accuracy ?? 0}% ({s?.total ?? 0} câu)
-                      </li>
-                    );
-                  })}
+                  {p.grade === 5
+                    ? GRADE5_CURRICULUM.map((ch) => {
+                        const chTotal = ch.topics.reduce(
+                          (sum, t) => sum + (scores[t.id]?.total ?? 0),
+                          0
+                        );
+                        const chAcc =
+                          chTotal > 0
+                            ? Math.round(
+                                (ch.topics.reduce(
+                                  (sum, t) => sum + (scores[t.id]?.correct ?? 0),
+                                  0
+                                ) /
+                                  chTotal) *
+                                  100
+                              )
+                            : 0;
+                        return (
+                          <li key={ch.id} className="text-mq-muted">
+                            {ch.label}: {chAcc}% ({chTotal} câu)
+                          </li>
+                        );
+                      })
+                    : modules.map((m) => {
+                        const s = scores[m.id];
+                        return (
+                          <li key={m.id} className="text-mq-muted">
+                            {MODULE_LABELS[m.id]}: {s?.accuracy ?? 0}% ({s?.total ?? 0} câu)
+                          </li>
+                        );
+                      })}
                 </ul>
               </div>
             );

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MathQuiz } from "@/components/MathQuiz/MathQuiz";
 import { AppShell } from "@/components/ui/AppShell";
 import { getStartStepIndex } from "@/services/learningPath";
-import { generateMathQuestion } from "@/services/questionGenerator";
+import { generateQuestion } from "@/services/questionGenerator";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { dailyTotalProgress, useAppStore } from "@/store/appStore";
 import { DAILY_QUESTION_COUNT } from "@/types/curriculum";
@@ -19,7 +19,7 @@ export default function PlayPage() {
   const ensureTodayExam = useAppStore((s) => s.ensureTodayExam);
   const recordAnswer = useAppStore((s) => s.recordAnswer);
   const completeDaily = useAppStore((s) => s.completeDaily);
-  const getDifficultyForModule = useAppStore((s) => s.getDifficultyForModule);
+  const getDifficultyForTopic = useAppStore((s) => s.getDifficultyForTopic);
 
   const path = profile.todayExamPath ?? [];
   const [stepIndex, setStepIndex] = useState(0);
@@ -28,7 +28,7 @@ export default function PlayPage() {
   const initRef = useRef(false);
 
   const currentStep = path[stepIndex];
-  const currentModule = currentStep?.module;
+  const currentTopicId = currentStep?.topicId;
 
   useEffect(() => {
     startSession();
@@ -49,15 +49,15 @@ export default function PlayPage() {
   }, [profile.todayExamPath, profile.dailyProgress, profile.dailyComplete, router]);
 
   useEffect(() => {
-    if (!ready || !currentModule) return;
-    const difficulty = getDifficultyForModule(currentModule);
-    setQuestion(generateMathQuestion(currentModule, difficulty, profile.grade));
-  }, [ready, stepIndex, currentModule, profile.grade, getDifficultyForModule]);
+    if (!ready || !currentTopicId) return;
+    const difficulty = getDifficultyForTopic(currentTopicId);
+    setQuestion(generateQuestion(currentTopicId, difficulty, profile.grade));
+  }, [ready, stepIndex, currentTopicId, profile.grade, getDifficultyForTopic]);
 
   const handleAnswer = useCallback(
     (correct: boolean, responseTime: number) => {
       if (!currentStep || !question) return;
-      recordAnswer(currentStep.module, correct, responseTime, question.difficulty);
+      recordAnswer(currentStep.topicId, correct, responseTime, question.difficulty);
 
       setTimeout(() => {
         const nextIndex = stepIndex + 1;
@@ -73,7 +73,7 @@ export default function PlayPage() {
   );
 
   const questionLabel = currentStep
-    ? `Câu ${stepIndex + 1}/${path.length} · ${currentStep.moduleLabel}`
+    ? `Câu ${stepIndex + 1}/${path.length} · ${currentStep.topicLabel}`
     : "";
 
   const done = dailyTotalProgress(profile.dailyProgress);
@@ -102,8 +102,8 @@ export default function PlayPage() {
             <span>
               {currentStep && (
                 <>
-                  <span className="mr-1 text-base">{currentStep.moduleIcon}</span>
-                  {currentStep.moduleLabel}
+                  <span className="mr-1 text-base">{currentStep.topicIcon}</span>
+                  {currentStep.topicLabel}
                 </>
               )}
             </span>

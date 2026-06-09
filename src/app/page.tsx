@@ -6,7 +6,13 @@ import { AppShell } from "@/components/ui/AppShell";
 import { getPathRecommendation } from "@/services/learningPath";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { dailyTotalProgress, useAppStore } from "@/store/appStore";
-import { DAILY_QUESTION_COUNT, getModulesForGrade, type Grade } from "@/types/curriculum";
+import {
+  DAILY_QUESTION_COUNT,
+  getModulesForGrade,
+  GRADE5_CURRICULUM,
+  type Grade,
+} from "@/types/curriculum";
+import { ALL_GRADE5_TOPIC_IDS } from "@/types/grade5Curriculum";
 
 export default function HomePage() {
   const profile = useActiveProfile();
@@ -25,6 +31,8 @@ export default function HomePage() {
   const allDone = dailyComplete || done >= DAILY_QUESTION_COUNT;
   const recommendation = getPathRecommendation(profile);
   const modules = getModulesForGrade(profile.grade);
+  const grade5TopicCount =
+    profile.selectedGrade5Topics?.length ?? ALL_GRADE5_TOPIC_IDS.length;
 
   return (
     <div className="page-wrap">
@@ -108,22 +116,46 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mb-5 flex flex-col gap-2">
-            {modules.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center gap-3 rounded-mq-sm bg-white p-3 shadow-sm"
-              >
-                <span className="text-2xl">{m.icon}</span>
-                <div>
-                  <h3 className="text-sm font-extrabold">{m.label}</h3>
-                  <p className="text-xs text-mq-muted">
-                    {dailyProgress[m.id] ?? 0}/{m.dailyCount} câu
-                  </p>
-                </div>
+          {profile.grade === 5 ? (
+            <div className="mb-5">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-extrabold">Chủ đề đang ôn</h2>
+                <Link href="/modules" className="text-xs font-bold text-mq-primary">
+                  Chọn chủ đề →
+                </Link>
               </div>
-            ))}
-          </div>
+              <p className="mb-3 text-xs text-mq-muted">
+                {grade5TopicCount} chủ đề · {GRADE5_CURRICULUM.length} chương
+              </p>
+              <div className="flex flex-col gap-2">
+                {GRADE5_CURRICULUM.map((ch) => (
+                  <div key={ch.id} className="rounded-mq-sm bg-white p-3 shadow-sm">
+                    <span className="text-sm font-extrabold">
+                      {ch.icon} {ch.label}
+                    </span>
+                    <p className="text-xs text-mq-muted">{ch.topics.length} chủ đề con</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-5 flex flex-col gap-2">
+              {modules.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center gap-3 rounded-mq-sm bg-white p-3 shadow-sm"
+                >
+                  <span className="text-2xl">{m.icon}</span>
+                  <div>
+                    <h3 className="text-sm font-extrabold">{m.label}</h3>
+                    <p className="text-xs text-mq-muted">
+                      {dailyProgress[m.id] ?? 0}/{m.dailyCount} câu
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="mt-auto flex flex-col gap-3">
             {allDone ? (

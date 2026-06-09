@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Grade, MathModule } from "@/types/curriculum";
 import { DAILY_QUESTION_COUNT, getModulesForGrade } from "@/types/curriculum";
+import { ALL_GRADE5_TOPIC_IDS, type Grade5TopicId } from "@/types/grade5Curriculum";
 import type { Difficulty } from "@/types/question";
 import { buildDailyExam, type PathStep } from "@/services/learningPath";
 import { initialDifficultyForGrade, nextDifficulty } from "@/utils/adaptiveDifficulty";
@@ -10,7 +11,7 @@ export interface MathEvent {
   timestamp: string;
   sessionId: string;
   studentId: string;
-  module: MathModule;
+  module: MathModule | Grade5TopicId | string;
   difficulty: Difficulty;
   correct: boolean;
   responseTime: number;
@@ -25,20 +26,21 @@ export interface StudentProfile {
   coins: number;
   streak: number;
   level: number;
-  dailyProgress: Record<MathModule, number>;
+  dailyProgress: Record<string, number>;
   dailyComplete: boolean;
   dailyCompleteCount: number;
   todayExamPath: PathStep[] | null;
+  selectedGrade5Topics: Grade5TopicId[] | null;
   events: MathEvent[];
-  moduleDifficulty: Partial<Record<MathModule, Difficulty>>;
+  moduleDifficulty: Partial<Record<string, Difficulty>>;
 }
 
 function levelFromXp(xp: number) {
   return Math.floor(xp / 100) + 1;
 }
 
-function emptyDailyProgress(grade: Grade): Record<MathModule, number> {
-  const progress = {} as Record<MathModule, number>;
+function emptyDailyProgress(grade: Grade): Record<string, number> {
+  const progress: Record<string, number> = {};
   for (const m of getModulesForGrade(grade)) {
     progress[m.id] = 0;
   }
@@ -48,7 +50,7 @@ function emptyDailyProgress(grade: Grade): Record<MathModule, number> {
 function createDefaultProfile(name = "Học sinh An", grade: Grade = 3): StudentProfile {
   const diff = initialDifficultyForGrade(grade);
   const modules = getModulesForGrade(grade);
-  const moduleDifficulty: Partial<Record<MathModule, Difficulty>> = {};
+  const moduleDifficulty: Partial<Record<string, Difficulty>> = {};
   for (const m of modules) moduleDifficulty[m.id] = diff;
 
   return {
@@ -64,6 +66,7 @@ function createDefaultProfile(name = "Học sinh An", grade: Grade = 3): Student
     dailyComplete: false,
     dailyCompleteCount: 0,
     todayExamPath: null,
+    selectedGrade5Topics: null,
     events: [],
     moduleDifficulty,
   };
@@ -87,6 +90,7 @@ export function normalizeProfile(profile: StudentProfile): StudentProfile {
     dailyComplete: profile.dailyComplete ?? false,
     dailyCompleteCount: profile.dailyCompleteCount ?? 0,
     todayExamPath: profile.todayExamPath ?? null,
+    selectedGrade5Topics: profile.selectedGrade5Topics ?? null,
     events: profile.events ?? [],
     moduleDifficulty,
   };
@@ -106,9 +110,12 @@ interface AppState {
   removeProfile: (id: string) => void;
   startSession: () => void;
   ensureTodayExam: () => void;
-  getDifficultyForModule: (module: MathModule) => Difficulty;
+  getDifficultyForTopic: (topicId: string) => Difficulty;
+  setSelectedGrade5Topics: (topicIds: Grade5TopicId[] | null) => void;
+  toggleGrade5Topic: (topicId: Grade5TopicId) => void;
+  resetTodayExam: () => void;
   recordAnswer: (
-    module: MathModule,
+    topicId: string,
     correct: boolean,
     responseTime: number,
     difficulty: Difficulty
@@ -155,6 +162,7 @@ export const useAppStore = create<AppState>()(
                   dailyProgress: emptyDailyProgress(grade),
                   todayExamPath: null,
                   dailyComplete: false,
+                  selectedGrade5Topics: grade === 5 ? p.selectedGrade5Topics : null,
                   moduleDifficulty: Object.fromEntries(
                     getModulesForGrade(grade).map((m) => [
                       m.id,
@@ -198,13 +206,55 @@ export const useAppStore = create<AppState>()(
         }));
       },
 
-      getDifficultyForModule: (module) => {
+      getDifficultyForTopic: (topicId) => {
         const { profiles, activeProfileId } = get();
         const p = profiles.find((x) => x.id === activeProfileId) ?? profiles[0];
-        return p.moduleDifficulty[module] ?? initialDifficultyForGrade(p.grade);
+        return p.moduleDifficulty[topicId] ?? initialDifficultyForGrade(p.grade);
       },
 
-      recordAnswer: (module, correct, responseTime, difficulty) => {
+      setSelectedGrade5Topics: (topicIds) => {
+        const { activeProfileId } = get();
+        set((s) => ({
+          profiles: updateProfileList(s.profiles, activeProfileId, (p) => ({
+            ...p,
+            selectedGrade5Topics: topicIds,
+            todayExamPath: null,
+            dailyProgress: emptyDailyProgress(p.grade),
+            dailyComplete: false,
+          })),
+        }));
+      },
+
+      toggleGrade5Topic: (topicId) => {
+        const { activeProfileId } = get();
+        set((s) => ({
+          profiles: updateProfileList(s.profiles, activeProfileId, (p) => {
+            const current = p.selectedGrade5Topics ?? [...ALL_GRADE5_TOPIC_IDS];
+            const next = current.includes(topicId)
+              ? current.filter((id) => id !== topicId)
+              : [...current, topicId];
+            return {
+              ...p,
+              selectedGrade5Topics:
+                next.length === ALL_GRADE5_TOPIC_IDS.length ? null : next,
+            };
+          }),
+        }));
+      },
+
+      resetTodayExam: () => {
+        const { activeProfileId } = get();
+        set((s) => ({
+          profiles: updateProfileList(s.profiles, activeProfileId, (p) => ({
+            ...p,
+            todayExamPath: null,
+            dailyProgress: emptyDailyProgress(p.grade),
+            dailyComplete: false,
+          })),
+        }));
+      },
+
+      recordAnswer: (topicId, correct, responseTime, difficulty) => {
         const { activeProfileId, sessionId } = get();
         set((s) => ({
           profiles: updateProfileList(s.profiles, activeProfileId, (p) => {
@@ -212,21 +262,23 @@ export const useAppStore = create<AppState>()(
               timestamp: new Date().toISOString(),
               sessionId,
               studentId: p.id,
-              module,
+              module: topicId,
               difficulty,
               correct,
               responseTime,
             };
             const events = [...p.events, event];
             const newDiff = nextDifficulty(
-              p.moduleDifficulty[module] ?? initialDifficultyForGrade(p.grade),
+              p.moduleDifficulty[topicId] ?? initialDifficultyForGrade(p.grade),
               events,
-              module
+              topicId as MathModule
             );
             const dailyProgress = { ...p.dailyProgress };
-            const moduleCap =
-              getModulesForGrade(p.grade).find((m) => m.id === module)?.dailyCount ?? 999;
-            dailyProgress[module] = Math.min((dailyProgress[module] ?? 0) + 1, moduleCap);
+            const pathCap =
+              p.todayExamPath?.find((step) => step.topicId === topicId)?.totalInTopic ??
+              getModulesForGrade(p.grade).find((m) => m.id === topicId)?.dailyCount ??
+              999;
+            dailyProgress[topicId] = Math.min((dailyProgress[topicId] ?? 0) + 1, pathCap);
             const xpGain = correct ? 10 : 2;
             const newXp = p.xp + xpGain;
             const doneToday = dailyTotalProgress(dailyProgress);
@@ -236,7 +288,7 @@ export const useAppStore = create<AppState>()(
               ...p,
               events,
               dailyProgress,
-              moduleDifficulty: { ...p.moduleDifficulty, [module]: newDiff },
+              moduleDifficulty: { ...p.moduleDifficulty, [topicId]: newDiff },
               xp: newXp,
               level: levelFromXp(newXp),
               dailyComplete: p.dailyComplete || doneToday >= DAILY_QUESTION_COUNT,
@@ -292,19 +344,24 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "hoche-v1",
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as AppState;
+        let profiles = state.profiles.map((p) => normalizeProfile(p as StudentProfile));
         if (version < 2) {
-          return {
-            ...state,
-            profiles: state.profiles.map((p) => ({
-              ...p,
-              todayExamPath: (p as StudentProfile).todayExamPath ?? null,
-            })),
-          };
+          profiles = profiles.map((p) => ({
+            ...p,
+            todayExamPath: p.todayExamPath ?? null,
+          }));
         }
-        return state;
+        if (version < 3) {
+          profiles = profiles.map((p) => ({
+            ...p,
+            selectedGrade5Topics: p.selectedGrade5Topics ?? null,
+            dailyProgress: p.dailyProgress ?? emptyDailyProgress(p.grade),
+          }));
+        }
+        return { ...state, profiles };
       },
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -315,6 +372,6 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-export function dailyTotalProgress(progress: Record<MathModule, number>): number {
+export function dailyTotalProgress(progress: Record<string, number>): number {
   return Object.values(progress).reduce((s, n) => s + (n ?? 0), 0);
 }

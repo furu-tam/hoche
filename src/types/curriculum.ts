@@ -1,3 +1,12 @@
+import {
+  ALL_GRADE5_TOPIC_IDS,
+  GRADE5_CURRICULUM,
+  getGrade5TopicLabel,
+  type Grade5Chapter,
+  type Grade5Topic,
+  type Grade5TopicId,
+} from "./grade5Curriculum";
+
 export type Grade = 1 | 2 | 3 | 4 | 5;
 
 export type MathModule =
@@ -48,20 +57,21 @@ export const GRADE_CURRICULUM: Record<Grade, ModuleInfo[]> = {
     { id: "geometry", label: "Chu vi & diện tích", icon: "📐", description: "Hình chữ nhật, vuông", dailyCount: 2 },
     { id: "word_problem", label: "Bài toán có lời văn", icon: "📝", description: "Giải bài toán thực tế", dailyCount: 2 },
   ],
-  5: [
-    { id: "fractions", label: "Phân số nâng cao", icon: "🍕", description: "So sánh và rút gọn", dailyCount: 2 },
-    { id: "decimals", label: "Số thập phân", icon: "🔢", description: "Cộng trừ số thập phân", dailyCount: 1 },
-    { id: "percent", label: "Phần trăm", icon: "💯", description: "Tính phần trăm cơ bản", dailyCount: 1 },
-    { id: "unit_conversion", label: "Đổi đơn vị", icon: "⚖️", description: "Độ dài, khối lượng, thời gian, vận tốc", dailyCount: 2 },
-    { id: "geometry", label: "Hình học", icon: "📐", description: "Công thức chu vi, diện tích, thể tích", dailyCount: 2 },
-    { id: "word_problem", label: "Bài toán nâng cao", icon: "📝", description: "Bài toán tổng hợp", dailyCount: 2 },
-  ],
+  5: [],
 };
 
 export const DAILY_QUESTION_COUNT = 10;
 
 export function getModulesForGrade(grade: Grade): ModuleInfo[] {
   return GRADE_CURRICULUM[grade];
+}
+
+export { GRADE5_CURRICULUM, ALL_GRADE5_TOPIC_IDS };
+export type { Grade5TopicId, Grade5Chapter, Grade5Topic };
+
+export function getTopicLabel(topicId: string, grade: Grade): string {
+  if (grade === 5) return getGrade5TopicLabel(topicId as Grade5TopicId);
+  return MODULE_LABELS[topicId as MathModule] ?? topicId;
 }
 
 export const MODULE_LABELS: Record<MathModule, string> = {
