@@ -172,12 +172,19 @@ export default function HomePage() {
                 ✅ Đã hoàn thành đề hôm nay! ({done}/{DAILY_QUESTION_COUNT})
               </div>
             ) : (
-              <Link
-                href="/play"
-                className="flex min-h-[72px] items-center justify-center rounded-mq bg-gradient-to-br from-mq-primary to-sky-400 text-xl font-extrabold text-white active:scale-[0.97]"
-              >
-                ▶ LÀM BÀI HÔM NAY ({done}/{DAILY_QUESTION_COUNT})
-              </Link>
+              <>
+                {profile.grade === 1 && (
+                  <p className="mb-2 text-center text-xs font-bold text-mq-primary">
+                    🔊 Lớp 1 có đọc câu hỏi bằng giọng nói — bấm loa để nghe lại
+                  </p>
+                )}
+                <Link
+                  href="/play"
+                  className="flex min-h-[72px] items-center justify-center rounded-mq bg-gradient-to-br from-mq-primary to-sky-400 text-xl font-extrabold text-white active:scale-[0.97]"
+                >
+                  ▶ LÀM BÀI HÔM NAY ({done}/{DAILY_QUESTION_COUNT})
+                </Link>
+              </>
             )}
           </div>
         </main>

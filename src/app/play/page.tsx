@@ -59,6 +59,7 @@ export default function PlayPage() {
       if (!currentStep || !question) return;
       recordAnswer(currentStep.topicId, correct, responseTime, question.difficulty);
 
+      const delay = profile.grade === 1 ? 1200 : 900;
       setTimeout(() => {
         const nextIndex = stepIndex + 1;
         if (nextIndex < path.length) {
@@ -67,9 +68,9 @@ export default function PlayPage() {
           completeDaily();
           router.push("/reward");
         }
-      }, 900);
+      }, delay);
     },
-    [currentStep, question, stepIndex, path.length, recordAnswer, completeDaily, router]
+    [currentStep, question, stepIndex, path.length, profile.grade, recordAnswer, completeDaily, router]
   );
 
   const questionLabel = currentStep
@@ -121,6 +122,7 @@ export default function PlayPage() {
               key={`${stepIndex}-${question.promptText}-${question.answer}`}
               question={question}
               questionLabel={questionLabel}
+              voiceEnabled={profile.grade === 1}
               onAnswer={handleAnswer}
             />
           )}
