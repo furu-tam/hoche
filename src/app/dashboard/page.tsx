@@ -4,7 +4,13 @@ import { AppShell } from "@/components/ui/AppShell";
 import { ProfileBadge } from "@/components/ui/ProfileBadge";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { computeModuleScores } from "@/utils/skillStats";
-import { getModulesForGrade, GRADE5_CURRICULUM, MODULE_LABELS } from "@/types/curriculum";
+import {
+  getModulesForGrade,
+  GRADE1_CURRICULUM,
+  GRADE5_CURRICULUM,
+  isTopicBasedGrade,
+  MODULE_LABELS,
+} from "@/types/curriculum";
 
 export default function DashboardPage() {
   const profile = useActiveProfile();
@@ -39,8 +45,8 @@ export default function DashboardPage() {
 
           <h2 className="mb-3 font-extrabold">Theo chủ đề</h2>
           <div className="flex flex-col gap-3">
-            {profile.grade === 5
-              ? GRADE5_CURRICULUM.map((chapter) => {
+            {isTopicBasedGrade(profile.grade)
+              ? (profile.grade === 1 ? GRADE1_CURRICULUM : GRADE5_CURRICULUM).map((chapter) => {
                   const chapterScores = chapter.topics.map((t) => scores[t.id] ?? { total: 0, correct: 0, accuracy: 0 });
                   const chTotal = chapterScores.reduce((s, x) => s + x.total, 0);
                   const chCorrect = chapterScores.reduce((s, x) => s + x.correct, 0);

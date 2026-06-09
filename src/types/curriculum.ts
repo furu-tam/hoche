@@ -1,4 +1,12 @@
 import {
+  ALL_GRADE1_TOPIC_IDS,
+  GRADE1_CURRICULUM,
+  getGrade1TopicLabel,
+  type Grade1Chapter,
+  type Grade1Topic,
+  type Grade1TopicId,
+} from "./grade1Curriculum";
+import {
   ALL_GRADE5_TOPIC_IDS,
   GRADE5_CURRICULUM,
   getGrade5TopicLabel,
@@ -32,12 +40,7 @@ export interface ModuleInfo {
 
 /** 10 câu/ngày — phân bổ theo trọng tâm từng lớp */
 export const GRADE_CURRICULUM: Record<Grade, ModuleInfo[]> = {
-  1: [
-    { id: "addition", label: "Cộng trong 10", icon: "➕", description: "Phép cộng cơ bản", dailyCount: 3 },
-    { id: "subtraction", label: "Trừ trong 10", icon: "➖", description: "Phép trừ cơ bản", dailyCount: 3 },
-    { id: "comparison", label: "So sánh số", icon: "⚖️", description: "Lớn hơn, nhỏ hơn, bằng", dailyCount: 2 },
-    { id: "geometry", label: "Hình học", icon: "🔺", description: "Nhận biết hình cơ bản", dailyCount: 2 },
-  ],
+  1: [],
   2: [
     { id: "addition", label: "Cộng trong 100", icon: "➕", description: "Cộng không nhớ và có nhớ", dailyCount: 3 },
     { id: "subtraction", label: "Trừ trong 100", icon: "➖", description: "Trừ trong phạm vi 100", dailyCount: 3 },
@@ -66,10 +69,15 @@ export function getModulesForGrade(grade: Grade): ModuleInfo[] {
   return GRADE_CURRICULUM[grade];
 }
 
-export { GRADE5_CURRICULUM, ALL_GRADE5_TOPIC_IDS };
-export type { Grade5TopicId, Grade5Chapter, Grade5Topic };
+export { GRADE1_CURRICULUM, ALL_GRADE1_TOPIC_IDS, GRADE5_CURRICULUM, ALL_GRADE5_TOPIC_IDS };
+export type { Grade1TopicId, Grade1Chapter, Grade1Topic, Grade5TopicId, Grade5Chapter, Grade5Topic };
+
+export function isTopicBasedGrade(grade: Grade): grade is 1 | 5 {
+  return grade === 1 || grade === 5;
+}
 
 export function getTopicLabel(topicId: string, grade: Grade): string {
+  if (grade === 1) return getGrade1TopicLabel(topicId as Grade1TopicId);
   if (grade === 5) return getGrade5TopicLabel(topicId as Grade5TopicId);
   return MODULE_LABELS[topicId as MathModule] ?? topicId;
 }

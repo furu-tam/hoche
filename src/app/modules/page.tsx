@@ -5,40 +5,97 @@ import { AppShell } from "@/components/ui/AppShell";
 import { ProfileBadge } from "@/components/ui/ProfileBadge";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import {
-  ALL_GRADE5_TOPIC_IDS,
   DAILY_QUESTION_COUNT,
   getModulesForGrade,
+  GRADE1_CURRICULUM,
   GRADE5_CURRICULUM,
-  type Grade5TopicId,
+  isTopicBasedGrade,
 } from "@/types/curriculum";
+import { ALL_GRADE1_TOPIC_IDS } from "@/types/grade1Curriculum";
+import { ALL_GRADE5_TOPIC_IDS } from "@/types/grade5Curriculum";
 import { useAppStore } from "@/store/appStore";
+
+type TopicChapter = {
+  id: string;
+  label: string;
+  icon: string;
+  topics: { id: string; label: string; description: string }[];
+};
+
+const TOPIC_GRADE_CONFIG = {
+  1: {
+    curriculum: GRADE1_CURRICULUM as TopicChapter[],
+    allIds: ALL_GRADE1_TOPIC_IDS,
+    title: "Chương trình lớp 1",
+  },
+  5: {
+    curriculum: GRADE5_CURRICULUM as TopicChapter[],
+    allIds: ALL_GRADE5_TOPIC_IDS,
+    title: "Chương trình lớp 5",
+  },
+} as const;
 
 export default function ModulesPage() {
   const profile = useActiveProfile();
   const modules = getModulesForGrade(profile.grade);
+  const toggleGrade1Topic = useAppStore((s) => s.toggleGrade1Topic);
+  const setSelectedGrade1Topics = useAppStore((s) => s.setSelectedGrade1Topics);
   const toggleGrade5Topic = useAppStore((s) => s.toggleGrade5Topic);
   const setSelectedGrade5Topics = useAppStore((s) => s.setSelectedGrade5Topics);
   const resetTodayExam = useAppStore((s) => s.resetTodayExam);
 
-  const selected = profile.selectedGrade5Topics;
+  const topicGrade = isTopicBasedGrade(profile.grade) ? profile.grade : null;
+  const config = topicGrade ? TOPIC_GRADE_CONFIG[topicGrade] : null;
+
+  const selected =
+    topicGrade === 1
+      ? profile.selectedGrade1Topics
+      : topicGrade === 5
+        ? profile.selectedGrade5Topics
+        : null;
+
   const activeIds = useMemo(() => {
-    if (selected === null) return new Set(ALL_GRADE5_TOPIC_IDS);
+    if (!config) return new Set<string>();
+    if (selected === null) return new Set(config.allIds);
     return new Set(selected);
-  }, [selected]);
+  }, [config, selected]);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(GRADE5_CURRICULUM.map((c) => [c.id, true]))
+    config
+      ? Object.fromEntries(config.curriculum.map((c) => [c.id, true]))
+      : {}
   );
 
-  const isSelected = (id: Grade5TopicId) => activeIds.has(id);
+  const isSelected = (id: string) => activeIds.has(id);
+
+  const toggleTopic = (id: string) => {
+    if (topicGrade === 1) toggleGrade1Topic(id as (typeof ALL_GRADE1_TOPIC_IDS)[number]);
+    if (topicGrade === 5) toggleGrade5Topic(id as (typeof ALL_GRADE5_TOPIC_IDS)[number]);
+  };
+
+  const selectAll = () => {
+    if (topicGrade === 1) setSelectedGrade1Topics(null);
+    if (topicGrade === 5) setSelectedGrade5Topics(null);
+  };
+
+  const selectNone = () => {
+    if (topicGrade === 1) setSelectedGrade1Topics([]);
+    if (topicGrade === 5) setSelectedGrade5Topics([]);
+  };
 
   const applySelection = () => {
-    const ids = [...activeIds] as Grade5TopicId[];
-    setSelectedGrade5Topics(ids.length === ALL_GRADE5_TOPIC_IDS.length ? null : ids);
+    if (!config || !topicGrade) return;
+    const ids = [...activeIds];
+    const allSelected = ids.length === config.allIds.length;
+    if (topicGrade === 1) {
+      setSelectedGrade1Topics(allSelected ? null : (ids as typeof ALL_GRADE1_TOPIC_IDS));
+    } else {
+      setSelectedGrade5Topics(allSelected ? null : (ids as typeof ALL_GRADE5_TOPIC_IDS));
+    }
     resetTodayExam();
   };
 
-  if (profile.grade !== 5) {
+  if (!topicGrade || !config) {
     return (
       <div className="page-wrap">
         <AppShell activeNav="modules">
@@ -75,23 +132,23 @@ export default function ModulesPage() {
           <div className="mb-4">
             <ProfileBadge />
           </div>
-          <h1 className="mb-1 text-2xl font-extrabold text-mq-primary">Chương trình lớp 5</h1>
+          <h1 className="mb-1 text-2xl font-extrabold text-mq-primary">{config.title}</h1>
           <p className="mb-4 text-sm text-mq-muted">
             Chọn chủ đề để tạo đề ôn {DAILY_QUESTION_COUNT} câu/ngày. Đang chọn{" "}
-            <strong>{activeIds.size}</strong>/{ALL_GRADE5_TOPIC_IDS.length} chủ đề.
+            <strong>{activeIds.size}</strong>/{config.allIds.length} chủ đề.
           </p>
 
           <div className="mb-4 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setSelectedGrade5Topics(null)}
+              onClick={selectAll}
               className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-mq-muted"
             >
               Chọn tất cả
             </button>
             <button
               type="button"
-              onClick={() => setSelectedGrade5Topics([])}
+              onClick={selectNone}
               className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-mq-muted"
             >
               Bỏ chọn
@@ -107,7 +164,7 @@ export default function ModulesPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            {GRADE5_CURRICULUM.map((chapter) => (
+            {config.curriculum.map((chapter) => (
               <div key={chapter.id} className="rounded-mq-sm bg-white shadow-sm">
                 <button
                   type="button"
@@ -134,7 +191,7 @@ export default function ModulesPage() {
                         <input
                           type="checkbox"
                           checked={isSelected(topic.id)}
-                          onChange={() => toggleGrade5Topic(topic.id)}
+                          onChange={() => toggleTopic(topic.id)}
                           className="mt-1 h-4 w-4 accent-mq-primary"
                         />
                         <div>

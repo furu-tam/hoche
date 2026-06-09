@@ -9,9 +9,12 @@ import { dailyTotalProgress, useAppStore } from "@/store/appStore";
 import {
   DAILY_QUESTION_COUNT,
   getModulesForGrade,
+  GRADE1_CURRICULUM,
   GRADE5_CURRICULUM,
+  isTopicBasedGrade,
   type Grade,
 } from "@/types/curriculum";
+import { ALL_GRADE1_TOPIC_IDS } from "@/types/grade1Curriculum";
 import { ALL_GRADE5_TOPIC_IDS } from "@/types/grade5Curriculum";
 
 export default function HomePage() {
@@ -31,8 +34,14 @@ export default function HomePage() {
   const allDone = dailyComplete || done >= DAILY_QUESTION_COUNT;
   const recommendation = getPathRecommendation(profile);
   const modules = getModulesForGrade(profile.grade);
-  const grade5TopicCount =
-    profile.selectedGrade5Topics?.length ?? ALL_GRADE5_TOPIC_IDS.length;
+  const topicCurriculum =
+    profile.grade === 1 ? GRADE1_CURRICULUM : profile.grade === 5 ? GRADE5_CURRICULUM : null;
+  const topicCount =
+    profile.grade === 1
+      ? (profile.selectedGrade1Topics?.length ?? ALL_GRADE1_TOPIC_IDS.length)
+      : profile.grade === 5
+        ? (profile.selectedGrade5Topics?.length ?? ALL_GRADE5_TOPIC_IDS.length)
+        : 0;
 
   return (
     <div className="page-wrap">
@@ -116,7 +125,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {profile.grade === 5 ? (
+          {isTopicBasedGrade(profile.grade) && topicCurriculum ? (
             <div className="mb-5">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-extrabold">Chủ đề đang ôn</h2>
@@ -125,10 +134,10 @@ export default function HomePage() {
                 </Link>
               </div>
               <p className="mb-3 text-xs text-mq-muted">
-                {grade5TopicCount} chủ đề · {GRADE5_CURRICULUM.length} chương
+                {topicCount} chủ đề · {topicCurriculum.length} chương
               </p>
               <div className="flex flex-col gap-2">
-                {GRADE5_CURRICULUM.map((ch) => (
+                {topicCurriculum.map((ch) => (
                   <div key={ch.id} className="rounded-mq-sm bg-white p-3 shadow-sm">
                     <span className="text-sm font-extrabold">
                       {ch.icon} {ch.label}

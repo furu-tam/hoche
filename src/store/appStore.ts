@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Grade, MathModule } from "@/types/curriculum";
 import { DAILY_QUESTION_COUNT, getModulesForGrade } from "@/types/curriculum";
+import { ALL_GRADE1_TOPIC_IDS, type Grade1TopicId } from "@/types/grade1Curriculum";
 import { ALL_GRADE5_TOPIC_IDS, type Grade5TopicId } from "@/types/grade5Curriculum";
 import type { Difficulty } from "@/types/question";
 import { buildDailyExam, type PathStep } from "@/services/learningPath";
@@ -30,6 +31,7 @@ export interface StudentProfile {
   dailyComplete: boolean;
   dailyCompleteCount: number;
   todayExamPath: PathStep[] | null;
+  selectedGrade1Topics: Grade1TopicId[] | null;
   selectedGrade5Topics: Grade5TopicId[] | null;
   events: MathEvent[];
   moduleDifficulty: Partial<Record<string, Difficulty>>;
@@ -66,6 +68,7 @@ function createDefaultProfile(name = "Học sinh An", grade: Grade = 3): Student
     dailyComplete: false,
     dailyCompleteCount: 0,
     todayExamPath: null,
+    selectedGrade1Topics: null,
     selectedGrade5Topics: null,
     events: [],
     moduleDifficulty,
@@ -90,6 +93,7 @@ export function normalizeProfile(profile: StudentProfile): StudentProfile {
     dailyComplete: profile.dailyComplete ?? false,
     dailyCompleteCount: profile.dailyCompleteCount ?? 0,
     todayExamPath: profile.todayExamPath ?? null,
+    selectedGrade1Topics: profile.selectedGrade1Topics ?? null,
     selectedGrade5Topics: profile.selectedGrade5Topics ?? null,
     events: profile.events ?? [],
     moduleDifficulty,
@@ -111,6 +115,8 @@ interface AppState {
   startSession: () => void;
   ensureTodayExam: () => void;
   getDifficultyForTopic: (topicId: string) => Difficulty;
+  setSelectedGrade1Topics: (topicIds: Grade1TopicId[] | null) => void;
+  toggleGrade1Topic: (topicId: Grade1TopicId) => void;
   setSelectedGrade5Topics: (topicIds: Grade5TopicId[] | null) => void;
   toggleGrade5Topic: (topicId: Grade5TopicId) => void;
   resetTodayExam: () => void;
@@ -162,6 +168,7 @@ export const useAppStore = create<AppState>()(
                   dailyProgress: emptyDailyProgress(grade),
                   todayExamPath: null,
                   dailyComplete: false,
+                  selectedGrade1Topics: grade === 1 ? p.selectedGrade1Topics : null,
                   selectedGrade5Topics: grade === 5 ? p.selectedGrade5Topics : null,
                   moduleDifficulty: Object.fromEntries(
                     getModulesForGrade(grade).map((m) => [
@@ -210,6 +217,36 @@ export const useAppStore = create<AppState>()(
         const { profiles, activeProfileId } = get();
         const p = profiles.find((x) => x.id === activeProfileId) ?? profiles[0];
         return p.moduleDifficulty[topicId] ?? initialDifficultyForGrade(p.grade);
+      },
+
+      setSelectedGrade1Topics: (topicIds) => {
+        const { activeProfileId } = get();
+        set((s) => ({
+          profiles: updateProfileList(s.profiles, activeProfileId, (p) => ({
+            ...p,
+            selectedGrade1Topics: topicIds,
+            todayExamPath: null,
+            dailyProgress: emptyDailyProgress(p.grade),
+            dailyComplete: false,
+          })),
+        }));
+      },
+
+      toggleGrade1Topic: (topicId) => {
+        const { activeProfileId } = get();
+        set((s) => ({
+          profiles: updateProfileList(s.profiles, activeProfileId, (p) => {
+            const current = p.selectedGrade1Topics ?? [...ALL_GRADE1_TOPIC_IDS];
+            const next = current.includes(topicId)
+              ? current.filter((id) => id !== topicId)
+              : [...current, topicId];
+            return {
+              ...p,
+              selectedGrade1Topics:
+                next.length === ALL_GRADE1_TOPIC_IDS.length ? null : next,
+            };
+          }),
+        }));
       },
 
       setSelectedGrade5Topics: (topicIds) => {
@@ -344,7 +381,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "hoche-v1",
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const state = persisted as AppState;
         let profiles = state.profiles.map((p) => normalizeProfile(p as StudentProfile));
@@ -359,6 +396,12 @@ export const useAppStore = create<AppState>()(
             ...p,
             selectedGrade5Topics: p.selectedGrade5Topics ?? null,
             dailyProgress: p.dailyProgress ?? emptyDailyProgress(p.grade),
+          }));
+        }
+        if (version < 4) {
+          profiles = profiles.map((p) => ({
+            ...p,
+            selectedGrade1Topics: p.selectedGrade1Topics ?? null,
           }));
         }
         return { ...state, profiles };

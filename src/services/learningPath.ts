@@ -6,10 +6,16 @@ import {
   type ModuleInfo,
 } from "@/types/curriculum";
 import {
+  ALL_GRADE1_TOPIC_IDS,
+  getGrade1TopicIcon,
+  type Grade1TopicId,
+} from "@/types/grade1Curriculum";
+import {
   ALL_GRADE5_TOPIC_IDS,
   getGrade5TopicIcon,
   type Grade5TopicId,
 } from "@/types/grade5Curriculum";
+import { buildTopicBasedExam } from "@/services/topicExam";
 import { computeModuleScores, weakestModule } from "@/utils/skillStats";
 
 export interface PathStep {
@@ -20,6 +26,13 @@ export interface PathStep {
   totalInTopic: number;
 }
 
+function getActiveGrade1Topics(profile: StudentProfile): Grade1TopicId[] {
+  const selected = profile.selectedGrade1Topics;
+  if (selected === null) return ALL_GRADE1_TOPIC_IDS;
+  if (selected.length === 0) return ALL_GRADE1_TOPIC_IDS;
+  return selected;
+}
+
 function getActiveGrade5Topics(profile: StudentProfile): Grade5TopicId[] {
   const selected = profile.selectedGrade5Topics;
   if (selected === null) return ALL_GRADE5_TOPIC_IDS;
@@ -27,48 +40,14 @@ function getActiveGrade5Topics(profile: StudentProfile): Grade5TopicId[] {
   return selected;
 }
 
-function buildGrade5Exam(profile: StudentProfile): PathStep[] {
-  const topics = getActiveGrade5Topics(profile);
-  const scores = computeModuleScores(profile.events);
-  const weak = weakestModule(scores, topics);
-
-  const order = [...topics].sort((a, b) => {
-    if (a === weak) return -1;
-    if (b === weak) return 1;
-    return (scores[a]?.accuracy ?? 0) - (scores[b]?.accuracy ?? 0);
-  });
-
-  const counts: Record<string, number> = {};
-  for (const t of topics) counts[t] = 0;
-
-  const perTopic = Math.max(1, Math.floor(DAILY_QUESTION_COUNT / topics.length));
-  const caps: Record<string, number> = {};
-  for (const t of topics) caps[t] = perTopic;
-  let remainder = DAILY_QUESTION_COUNT - perTopic * topics.length;
-  for (let i = 0; i < remainder; i++) caps[order[i % order.length]]++;
-
-  const path: PathStep[] = [];
-  while (path.length < DAILY_QUESTION_COUNT) {
-    let added = false;
-    for (const topicId of order) {
-      if (counts[topicId] < caps[topicId]) {
-        counts[topicId]++;
-        path.push(stepFromTopic(topicId, counts[topicId], caps[topicId]));
-        added = true;
-        if (path.length >= DAILY_QUESTION_COUNT) break;
-      }
-    }
-    if (!added) break;
-  }
-
-  return path;
-}
-
-function stepFromTopic(topicId: string, index: number, total: number): PathStep {
+function stepFromTopic(topicId: string, grade: 1 | 5, index: number, total: number): PathStep {
   return {
     topicId,
-    topicLabel: getTopicLabel(topicId, 5),
-    topicIcon: getGrade5TopicIcon(topicId as Grade5TopicId),
+    topicLabel: getTopicLabel(topicId, grade),
+    topicIcon:
+      grade === 1
+        ? getGrade1TopicIcon(topicId as Grade1TopicId)
+        : getGrade5TopicIcon(topicId as Grade5TopicId),
     indexInTopic: index,
     totalInTopic: total,
   };
@@ -86,10 +65,19 @@ function stepFromModule(mod: ModuleInfo, index: number): PathStep {
 
 /** Đề ôn 10 câu/ngày — ưu tiên chủ đề yếu */
 export function buildDailyExam(profile: StudentProfile): PathStep[] {
-  if (profile.grade === 5) return buildGrade5Exam(profile);
+  const scores = computeModuleScores(profile.events);
+
+  if (profile.grade === 1) {
+    const topics = getActiveGrade1Topics(profile);
+    return buildTopicBasedExam(topics, scores, (id, i, t) => stepFromTopic(id, 1, i, t));
+  }
+
+  if (profile.grade === 5) {
+    const topics = getActiveGrade5Topics(profile);
+    return buildTopicBasedExam(topics, scores, (id, i, t) => stepFromTopic(id, 5, i, t));
+  }
 
   const modules = getModulesForGrade(profile.grade);
-  const scores = computeModuleScores(profile.events);
   const weak = weakestModule(
     scores,
     modules.map((m) => m.id)
@@ -137,6 +125,15 @@ export function getStartStepIndex(path: PathStep[], progress: Record<string, num
 }
 
 export function getPathRecommendation(profile: StudentProfile): string {
+  if (profile.grade === 1) {
+    const topics = getActiveGrade1Topics(profile);
+    const selected = profile.selectedGrade1Topics?.length ?? 0;
+    if (selected > 0 && selected < ALL_GRADE1_TOPIC_IDS.length) {
+      return `Đề hôm nay gồm ${topics.length} chủ đề bạn đã chọn.`;
+    }
+    return `Hôm nay ôn ${DAILY_QUESTION_COUNT} câu từ ${ALL_GRADE1_TOPIC_IDS.length} chủ đề lớp 1.`;
+  }
+
   if (profile.grade === 5) {
     const topics = getActiveGrade5Topics(profile);
     const selected = profile.selectedGrade5Topics?.length ?? 0;

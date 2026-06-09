@@ -4,7 +4,13 @@ import { useState } from "react";
 import { AppShell } from "@/components/ui/AppShell";
 import { useAppStore } from "@/store/appStore";
 import { computeModuleScores } from "@/utils/skillStats";
-import { getModulesForGrade, GRADE5_CURRICULUM, MODULE_LABELS } from "@/types/curriculum";
+import {
+  getModulesForGrade,
+  GRADE1_CURRICULUM,
+  GRADE5_CURRICULUM,
+  isTopicBasedGrade,
+  MODULE_LABELS,
+} from "@/types/curriculum";
 
 export default function ParentPage() {
   const profiles = useAppStore((s) => s.profiles);
@@ -71,8 +77,8 @@ export default function ParentPage() {
                   Streak {p.streak} ngày · Độ chính xác {acc}% · {p.dailyCompleteCount} đề hoàn thành
                 </p>
                 <ul className="text-sm">
-                  {p.grade === 5
-                    ? GRADE5_CURRICULUM.map((ch) => {
+                  {isTopicBasedGrade(p.grade)
+                    ? (p.grade === 1 ? GRADE1_CURRICULUM : GRADE5_CURRICULUM).map((ch) => {
                         const chTotal = ch.topics.reduce(
                           (sum, t) => sum + (scores[t.id]?.total ?? 0),
                           0
