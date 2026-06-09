@@ -175,7 +175,7 @@ export default function HomePage() {
               <>
                 {profile.grade === 1 && (
                   <p className="mb-2 text-center text-xs font-bold text-mq-primary">
-                    🔊 Lớp 1 có đọc câu hỏi bằng giọng nói — bấm loa để nghe lại
+                    🔊 Lớp 1 đọc câu hỏi bằng giọng nói — bấm icon loa góc phải để nghe lại
                   </p>
                 )}
                 <Link

@@ -24,8 +24,7 @@ export function MathQuiz({
   const [picked, setPicked] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const answeredRef = useRef(false);
-  const { supported, readQuestion, readOption, readFeedback, cancel } =
-    useSpeech(voiceEnabled);
+  const { supported, readQuestion, readFeedback, cancel } = useSpeech(voiceEnabled);
 
   useEffect(() => {
     setStart(Date.now());
@@ -63,12 +62,10 @@ export function MathQuiz({
     onAnswer(correct, (Date.now() - start) / 1000);
   };
 
-  const handleReadOption = async (opt: string) => {
-    if (picked) return;
+  const replayQuestion = () => {
     cancel();
     setSpeaking(true);
-    await readOption(opt);
-    setSpeaking(false);
+    readQuestion(question.promptText).finally(() => setSpeaking(false));
   };
 
   return (
@@ -95,40 +92,22 @@ export function MathQuiz({
         <p className="mb-3 text-center text-xs font-bold text-mq-muted">{questionLabel}</p>
       )}
 
-      <div className="mb-4 flex flex-col gap-3">
+      <div className="relative mb-4">
+        {voiceEnabled && supported && (
+          <div className="absolute right-0 top-0 z-10 -translate-y-1">
+            <SpeakButton label="Nghe câu hỏi" onClick={replayQuestion} />
+          </div>
+        )}
         <div className="rounded-mq bg-white p-6 text-center shadow-mq">
           <p className={`font-extrabold leading-relaxed ${voiceEnabled ? "text-3xl" : "text-2xl"}`}>
             {question.promptText}
           </p>
         </div>
-        {voiceEnabled && supported && (
-          <SpeakButton
-            size="lg"
-            label="Nghe lại câu hỏi"
-            className="w-full"
-            onClick={() => {
-              cancel();
-              setSpeaking(true);
-              readQuestion(question.promptText).finally(() => setSpeaking(false));
-            }}
-          />
-        )}
       </div>
-
-      {voiceEnabled && supported && (
-        <p className="mb-3 text-center text-sm font-bold text-mq-muted">
-          Nhấn 🔊 để nghe đáp án, nhấn ô để chọn
-        </p>
-      )}
 
       <div className={`mt-auto grid grid-cols-2 gap-3 ${voiceEnabled ? "gap-4" : ""}`}>
         {question.options.map((opt) => (
-          <div key={opt} className="relative">
-            {voiceEnabled && supported && !picked && (
-              <div className="absolute -right-1 -top-1 z-10">
-                <SpeakButton label={`Nghe đáp án ${opt}`} onClick={() => handleReadOption(opt)} />
-              </div>
-            )}
+          <div key={opt}>
             <button
               type="button"
               onClick={() => choose(opt)}
