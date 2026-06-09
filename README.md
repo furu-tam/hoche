@@ -33,9 +33,12 @@ http://localhost:3000
 
 ## Deploy GitHub Pages
 
-1. Push lên nhánh `main`
-2. Vào **Settings → Pages → Source: GitHub Actions**
-3. URL: `https://furu-tam.github.io/hoche/`
+1. Vào **Settings → Pages → Build and deployment**
+2. **Source** phải là **GitHub Actions** (không chọn "Deploy from a branch" / thư mục `/docs`)
+3. Push lên nhánh `main` — workflow `.github/workflows/deploy-pages.yml` sẽ build và deploy
+4. URL: `https://furu-tam.github.io/hoche/`
+
+> Nếu thấy lỗi Jekyll `No such file or directory ... /docs`, nghĩa là Pages đang trỏ vào thư mục `/docs` thay vì GitHub Actions. Đổi lại Source như bước 2.
 
 ## Tech stack
 
