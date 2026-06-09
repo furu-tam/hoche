@@ -8,6 +8,15 @@ import type { Difficulty } from "@/types/question";
 import { buildDailyExam, type PathStep } from "@/services/learningPath";
 import { initialDifficultyForGrade, nextDifficulty } from "@/utils/adaptiveDifficulty";
 
+export interface AnswerReview {
+  promptText: string;
+  options: string[];
+  answer: string;
+  studentAnswer: string;
+  explanation: string;
+  topicLabel?: string;
+}
+
 export interface MathEvent {
   timestamp: string;
   sessionId: string;
@@ -16,6 +25,12 @@ export interface MathEvent {
   difficulty: Difficulty;
   correct: boolean;
   responseTime: number;
+  promptText?: string;
+  options?: string[];
+  answer?: string;
+  studentAnswer?: string;
+  explanation?: string;
+  topicLabel?: string;
 }
 
 export interface StudentProfile {
@@ -124,7 +139,8 @@ interface AppState {
     topicId: string,
     correct: boolean,
     responseTime: number,
-    difficulty: Difficulty
+    difficulty: Difficulty,
+    review?: AnswerReview
   ) => void;
   completeDaily: () => void;
   resetDailyIfNewDay: () => void;
@@ -291,7 +307,7 @@ export const useAppStore = create<AppState>()(
         }));
       },
 
-      recordAnswer: (topicId, correct, responseTime, difficulty) => {
+      recordAnswer: (topicId, correct, responseTime, difficulty, review) => {
         const { activeProfileId, sessionId } = get();
         set((s) => ({
           profiles: updateProfileList(s.profiles, activeProfileId, (p) => {
@@ -303,6 +319,12 @@ export const useAppStore = create<AppState>()(
               difficulty,
               correct,
               responseTime,
+              promptText: review?.promptText,
+              options: review?.options,
+              answer: review?.answer,
+              studentAnswer: review?.studentAnswer,
+              explanation: review?.explanation,
+              topicLabel: review?.topicLabel,
             };
             const events = [...p.events, event];
             const newDiff = nextDifficulty(

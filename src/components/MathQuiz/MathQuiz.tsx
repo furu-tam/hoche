@@ -11,7 +11,7 @@ interface MathQuizProps {
   question: MathQuestion;
   questionLabel: string;
   voiceEnabled?: boolean;
-  onAnswer: (correct: boolean, responseTime: number) => void;
+  onAnswer: (correct: boolean, responseTime: number, studentAnswer: string) => void;
 }
 
 export function MathQuiz({
@@ -59,7 +59,7 @@ export function MathQuiz({
       setSpeaking(false);
     }
 
-    onAnswer(correct, (Date.now() - start) / 1000);
+    onAnswer(correct, (Date.now() - start) / 1000, opt);
   };
 
   const replayQuestion = () => {

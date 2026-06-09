@@ -63,9 +63,16 @@ export default function PlayPage() {
   const question = ready ? questions[stepIndex] : null;
 
   const handleAnswer = useCallback(
-    (correct: boolean, responseTime: number) => {
+    (correct: boolean, responseTime: number, studentAnswer: string) => {
       if (!currentStep || !question || stepIndex === null) return;
-      recordAnswer(currentStep.topicId, correct, responseTime, question.difficulty);
+      recordAnswer(currentStep.topicId, correct, responseTime, question.difficulty, {
+        promptText: question.promptText,
+        options: question.options,
+        answer: question.answer,
+        studentAnswer,
+        explanation: question.explanation,
+        topicLabel: question.topicLabel ?? currentStep.topicLabel,
+      });
 
       const delay = profile.grade === 1 ? 1200 : 900;
       setTimeout(() => {
