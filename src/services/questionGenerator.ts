@@ -173,22 +173,120 @@ function genFractions(grade: Grade, difficulty: Difficulty): MathQuestion {
   };
 }
 
-function genGeometry(grade: Grade, difficulty: Difficulty): MathQuestion {
-  if (grade === 1) {
-    const shapes = [
-      { q: "Hình nào có 3 cạnh?", a: "Tam giác", opts: ["Tam giác", "Vuông", "Tròn"] },
-      { q: "Hình nào có 4 cạnh bằng nhau?", a: "Vuông", opts: ["Vuông", "Tam giác", "Tròn"] },
-      { q: "Hình tròn có mấy cạnh?", a: "0", opts: ["0", "3", "4"] },
-    ];
-    const item = shapes[randInt(0, shapes.length - 1)];
+const GEOMETRY_FORMULAS: {
+  prompt: string;
+  answer: string;
+  explanation: string;
+  distractors: string[];
+}[] = [
+  {
+    prompt: "Công thức tính chu vi hình vuông cạnh a là:",
+    answer: "P = a × 4",
+    explanation: "Chu vi hình vuông = 4 × cạnh = a × 4",
+    distractors: ["P = a × a", "P = (a + b) × 2", "P = a + a + a"],
+  },
+  {
+    prompt: "Công thức tính diện tích hình vuông cạnh a là:",
+    answer: "S = a × a",
+    explanation: "Diện tích hình vuông = cạnh × cạnh = a × a",
+    distractors: ["S = a × 4", "S = (a + b) × 2", "S = a × 2"],
+  },
+  {
+    prompt: "Công thức tính chu vi hình chữ nhật (dài a, rộng b) là:",
+    answer: "P = (a + b) × 2",
+    explanation: "Chu vi hình chữ nhật = (chiều dài + chiều rộng) × 2",
+    distractors: ["P = a × b", "P = a + b", "P = a × 4"],
+  },
+  {
+    prompt: "Công thức tính diện tích hình chữ nhật (dài a, rộng b) là:",
+    answer: "S = a × b",
+    explanation: "Diện tích hình chữ nhật = chiều dài × chiều rộng",
+    distractors: ["S = (a + b) × 2", "S = a × a", "S = (a + b) ÷ 2"],
+  },
+  {
+    prompt: "Công thức tính diện tích hình tam giác (đáy a, chiều cao h) là:",
+    answer: "S = (a × h) ÷ 2",
+    explanation: "Diện tích tam giác = (đáy × chiều cao) ÷ 2",
+    distractors: ["S = a × h", "S = a + h", "S = (a + h) × 2"],
+  },
+  {
+    prompt: "Công thức tính diện tích hình thoi (2 đường chéo d₁, d₂) là:",
+    answer: "S = (d₁ × d₂) ÷ 2",
+    explanation: "Diện tích hình thoi = (đường chéo 1 × đường chéo 2) ÷ 2",
+    distractors: ["S = d₁ × d₂", "S = (d₁ + d₂) × 2", "S = d₁ + d₂"],
+  },
+  {
+    prompt: "Công thức tính chu vi hình tròn (đường kính d) là:",
+    answer: "C = d × 3,14",
+    explanation: "Chu vi hình tròn = đường kính × π (lấy π ≈ 3,14)",
+    distractors: ["C = d ÷ 3,14", "C = d × d", "C = d + d"],
+  },
+  {
+    prompt: "Công thức tính diện tích hình tròn (bán kính r) là:",
+    answer: "S = r × r × 3,14",
+    explanation: "Diện tích hình tròn = bán kính × bán kính × π",
+    distractors: ["S = r × 3,14", "S = r × r", "S = r × 4 × 3,14"],
+  },
+  {
+    prompt: "Công thức tính thể tích hình lập phương cạnh a là:",
+    answer: "V = a × a × a",
+    explanation: "Thể tích hình lập phương = cạnh × cạnh × cạnh",
+    distractors: ["V = a × a", "V = a × 6", "V = a × 4"],
+  },
+  {
+    prompt: "Công thức tính thể tích hình hộp chữ nhật (dài a, rộng b, cao h) là:",
+    answer: "V = a × b × h",
+    explanation: "Thể tích hình hộp = dài × rộng × cao",
+    distractors: ["V = a × b", "V = (a + b + h) × 2", "V = a + b + h"],
+  },
+];
+
+function genGeometryFormula(difficulty: Difficulty): MathQuestion {
+  const pool =
+    difficulty === 1
+      ? GEOMETRY_FORMULAS.slice(0, 4)
+      : difficulty === 2
+        ? GEOMETRY_FORMULAS.slice(0, 8)
+        : GEOMETRY_FORMULAS;
+  const item = pool[randInt(0, pool.length - 1)];
+  return {
+    type: "math",
+    module: "geometry",
+    difficulty,
+    promptText: item.prompt,
+    options: shuffle([item.answer, ...item.distractors.slice(0, 3)]),
+    answer: item.answer,
+    explanation: item.explanation,
+  };
+}
+
+function genGeometryCalc(grade: Grade, difficulty: Difficulty): MathQuestion {
+  if (grade === 5 && Math.random() > 0.5) {
+    const side = randInt(2, difficulty === 1 ? 6 : 10);
+    const isVolume = Math.random() > 0.5;
+    if (isVolume) {
+      const answer = side * side * side;
+      return {
+        type: "math",
+        module: "geometry",
+        difficulty,
+        promptText: `Hình lập phương cạnh ${side}cm. Thể tích = ? (cm³)`,
+        options: buildMcq(answer, uniqueDistractors(answer, 3, () => answer + randInt(-20, 20))),
+        answer: String(answer),
+        explanation: `Thể tích = ${side} × ${side} × ${side} = ${answer} cm³`,
+      };
+    }
+    const base = randInt(3, 10);
+    const height = randInt(2, 8);
+    const answer = (base * height) / 2;
     return {
       type: "math",
       module: "geometry",
       difficulty,
-      promptText: item.q,
-      options: shuffle(item.opts),
-      answer: item.a,
-      explanation: `Đáp án: ${item.a}`,
+      promptText: `Tam giác đáy ${base}cm, cao ${height}cm. Diện tích = ? (cm²)`,
+      options: buildMcq(answer, uniqueDistractors(answer, 3, () => answer + randInt(-5, 5))),
+      answer: String(answer),
+      explanation: `Diện tích = (${base} × ${height}) ÷ 2 = ${answer} cm²`,
     };
   }
 
@@ -208,6 +306,133 @@ function genGeometry(grade: Grade, difficulty: Difficulty): MathQuestion {
     explanation: isPerimeter
       ? `Chu vi = 2 × (${w} + ${h}) = ${answer}`
       : `Diện tích = ${w} × ${h} = ${answer}`,
+  };
+}
+
+function genGeometry(grade: Grade, difficulty: Difficulty): MathQuestion {
+  if (grade === 1) {
+    const shapes = [
+      { q: "Hình nào có 3 cạnh?", a: "Tam giác", opts: ["Tam giác", "Vuông", "Tròn"] },
+      { q: "Hình nào có 4 cạnh bằng nhau?", a: "Vuông", opts: ["Vuông", "Tam giác", "Tròn"] },
+      { q: "Hình tròn có mấy cạnh?", a: "0", opts: ["0", "3", "4"] },
+    ];
+    const item = shapes[randInt(0, shapes.length - 1)];
+    return {
+      type: "math",
+      module: "geometry",
+      difficulty,
+      promptText: item.q,
+      options: shuffle(item.opts),
+      answer: item.a,
+      explanation: `Đáp án: ${item.a}`,
+    };
+  }
+
+  if (grade === 5 && Math.random() > 0.45) {
+    return genGeometryFormula(difficulty);
+  }
+
+  return genGeometryCalc(grade, difficulty);
+}
+
+function genUnitConversion(difficulty: Difficulty): MathQuestion {
+  const templates: (() => { prompt: string; answer: number; explanation: string; unit: string })[] = [
+    () => {
+      const km = randInt(1, difficulty === 1 ? 3 : 5);
+      const m = randInt(100, 900);
+      const answer = km * 1000 + m;
+      return {
+        prompt: `${km} km ${m} m = ? m`,
+        answer,
+        explanation: `${km} km = ${km * 1000} m, cộng ${m} m → ${answer} m`,
+        unit: "m",
+      };
+    },
+    () => {
+      const m = randInt(2, difficulty === 1 ? 8 : 15);
+      const answer = m * 100;
+      return {
+        prompt: `${m} m = ? cm`,
+        answer,
+        explanation: `1 m = 100 cm → ${m} m = ${m} × 100 = ${answer} cm`,
+        unit: "cm",
+      };
+    },
+    () => {
+      const kg = randInt(1, difficulty === 1 ? 5 : 9);
+      const g = randInt(100, 900);
+      const answer = kg * 1000 + g;
+      return {
+        prompt: `${kg} kg ${g} g = ? g`,
+        answer,
+        explanation: `${kg} kg = ${kg * 1000} g, cộng ${g} g → ${answer} g`,
+        unit: "g",
+      };
+    },
+    () => {
+      const tons = difficulty === 1 ? 1 : randInt(1, 3);
+      const answer = tons * 1000;
+      return {
+        prompt: `${tons} tấn = ? kg`,
+        answer,
+        explanation: `1 tấn = 1000 kg → ${tons} tấn = ${answer} kg`,
+        unit: "kg",
+      };
+    },
+    () => {
+      const m2 = randInt(1, difficulty === 1 ? 5 : 10);
+      const answer = m2 * 100;
+      return {
+        prompt: `${m2} m² = ? dm²`,
+        answer,
+        explanation: `1 m² = 100 dm² → ${m2} m² = ${answer} dm²`,
+        unit: "dm²",
+      };
+    },
+    () => {
+      const liters = randInt(2, difficulty === 1 ? 8 : 15);
+      const answer = liters * 1000;
+      return {
+        prompt: `${liters} l = ? ml`,
+        answer,
+        explanation: `1 l = 1000 ml → ${liters} l = ${answer} ml`,
+        unit: "ml",
+      };
+    },
+    () => {
+      const dm3 = randInt(2, difficulty === 1 ? 6 : 12);
+      const answer = dm3 * 1000;
+      return {
+        prompt: `${dm3} dm³ = ? cm³`,
+        answer,
+        explanation: `1 dm³ = 1000 cm³ → ${dm3} dm³ = ${answer} cm³`,
+        unit: "cm³",
+      };
+    },
+    () => {
+      const hours = randInt(1, 3);
+      const minutes = randInt(10, 50);
+      const answer = hours * 60 + minutes;
+      return {
+        prompt: `${hours} giờ ${minutes} phút = ? phút`,
+        answer,
+        explanation: `${hours} giờ = ${hours * 60} phút, cộng ${minutes} phút → ${answer} phút`,
+        unit: "phút",
+      };
+    },
+  ];
+
+  const pool =
+    difficulty === 1 ? templates.slice(0, 4) : difficulty === 2 ? templates.slice(0, 6) : templates;
+  const t = pool[randInt(0, pool.length - 1)]();
+  return {
+    type: "math",
+    module: "unit_conversion",
+    difficulty,
+    promptText: t.prompt,
+    options: buildMcq(t.answer, uniqueDistractors(t.answer, 3, () => t.answer + randInt(-200, 200))),
+    answer: String(t.answer),
+    explanation: t.explanation,
   };
 }
 
@@ -334,5 +559,7 @@ export function generateMathQuestion(
       return genDecimals(difficulty);
     case "percent":
       return genPercent(difficulty);
+    case "unit_conversion":
+      return genUnitConversion(difficulty);
   }
 }

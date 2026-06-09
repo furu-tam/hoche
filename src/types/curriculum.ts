@@ -10,7 +10,8 @@ export type MathModule =
   | "geometry"
   | "word_problem"
   | "decimals"
-  | "percent";
+  | "percent"
+  | "unit_conversion";
 
 export interface ModuleInfo {
   id: MathModule;
@@ -49,9 +50,10 @@ export const GRADE_CURRICULUM: Record<Grade, ModuleInfo[]> = {
   ],
   5: [
     { id: "fractions", label: "Phân số nâng cao", icon: "🍕", description: "So sánh và rút gọn", dailyCount: 2 },
-    { id: "decimals", label: "Số thập phân", icon: "🔢", description: "Cộng trừ số thập phân", dailyCount: 2 },
-    { id: "percent", label: "Phần trăm", icon: "💯", description: "Tính phần trăm cơ bản", dailyCount: 2 },
-    { id: "geometry", label: "Hình học", icon: "📐", description: "Thể tích, diện tích", dailyCount: 2 },
+    { id: "decimals", label: "Số thập phân", icon: "🔢", description: "Cộng trừ số thập phân", dailyCount: 1 },
+    { id: "percent", label: "Phần trăm", icon: "💯", description: "Tính phần trăm cơ bản", dailyCount: 1 },
+    { id: "unit_conversion", label: "Đổi đơn vị", icon: "⚖️", description: "Độ dài, khối lượng, diện tích, thể tích", dailyCount: 2 },
+    { id: "geometry", label: "Hình học", icon: "📐", description: "Công thức chu vi, diện tích, thể tích", dailyCount: 2 },
     { id: "word_problem", label: "Bài toán nâng cao", icon: "📝", description: "Bài toán tổng hợp", dailyCount: 2 },
   ],
 };
@@ -73,4 +75,5 @@ export const MODULE_LABELS: Record<MathModule, string> = {
   word_problem: "Bài toán có lời văn",
   decimals: "Số thập phân",
   percent: "Phần trăm",
+  unit_conversion: "Đổi đơn vị",
 };
