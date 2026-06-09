@@ -1,0 +1,146 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect } from "react";
+import { AppShell } from "@/components/ui/AppShell";
+import { getPathRecommendation } from "@/services/learningPath";
+import { useActiveProfile } from "@/hooks/useActiveProfile";
+import { dailyTotalProgress, useAppStore } from "@/store/appStore";
+import { DAILY_QUESTION_COUNT, getModulesForGrade, type Grade } from "@/types/curriculum";
+
+export default function HomePage() {
+  const profile = useActiveProfile();
+  const resetDailyIfNewDay = useAppStore((s) => s.resetDailyIfNewDay);
+  const setActiveProfile = useAppStore((s) => s.setActiveProfile);
+  const setStudentGrade = useAppStore((s) => s.setStudentGrade);
+  const profiles = useAppStore((s) => s.profiles);
+
+  useEffect(() => {
+    resetDailyIfNewDay();
+  }, [resetDailyIfNewDay]);
+
+  const { xp, coins, level, streak, dailyProgress, dailyComplete } = profile;
+  const done = dailyTotalProgress(dailyProgress);
+  const pct = Math.round((done / DAILY_QUESTION_COUNT) * 100);
+  const allDone = dailyComplete || done >= DAILY_QUESTION_COUNT;
+  const recommendation = getPathRecommendation(profile);
+  const modules = getModulesForGrade(profile.grade);
+
+  return (
+    <div className="page-wrap">
+      <AppShell activeNav="home">
+        <main className="flex flex-1 flex-col px-4 py-5">
+          <header className="mb-5 text-center">
+            <h1 className="flex items-center justify-center gap-2 text-3xl font-extrabold text-mq-primary">
+              <span>📐</span> Học Hè
+            </h1>
+            <p className="mt-1 text-sm text-mq-muted">10 câu Toán mỗi ngày — ôn luyện theo lớp</p>
+          </header>
+
+          <div className="mb-4 rounded-mq-sm bg-white p-3 shadow-sm">
+            <label className="mb-1 block text-xs font-bold text-mq-muted">Học sinh · Lớp</label>
+            <select
+              value={profile.id}
+              onChange={(e) => setActiveProfile(e.target.value)}
+              className="w-full rounded-mq-sm border border-slate-200 px-3 py-2 font-bold"
+            >
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.avatar} {p.name} — Lớp {p.grade}
+                </option>
+              ))}
+            </select>
+            <div className="mt-2 flex gap-1">
+              {([1, 2, 3, 4, 5] as Grade[]).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setStudentGrade(profile.id, g)}
+                  className={`flex-1 rounded-lg py-1.5 text-xs font-bold ${
+                    profile.grade === g ? "bg-mq-primary text-white" : "bg-slate-100 text-mq-muted"
+                  }`}
+                >
+                  L{g}
+                </button>
+              ))}
+            </div>
+            <Link href="/profiles" className="mt-2 block text-center text-xs font-bold text-mq-primary">
+              Quản lý hồ sơ →
+            </Link>
+          </div>
+
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            {[
+              { label: "Level", value: level },
+              { label: "XP", value: xp },
+              { label: "Coins", value: coins },
+            ].map((s) => (
+              <div key={s.label} className="rounded-mq-sm bg-white py-3 text-center shadow-sm">
+                <div className="text-[0.65rem] font-bold uppercase tracking-wide text-mq-muted">
+                  {s.label}
+                </div>
+                <div className="text-xl font-extrabold text-mq-primary">{s.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-4 flex items-center justify-center gap-2 rounded-mq bg-gradient-to-r from-mq-accent to-amber-300 py-3.5 font-extrabold text-white">
+            <span className="text-2xl">🔥</span>
+            <span>{streak} ngày liên tiếp!</span>
+          </div>
+
+          <div className="mb-4 rounded-mq-sm bg-blue-50 px-3 py-2 text-sm font-semibold text-mq-primary">
+            🎯 {recommendation}
+          </div>
+
+          <div className="mb-5">
+            <div className="mb-2 flex justify-between text-sm font-bold">
+              <span>Đề ôn hôm nay</span>
+              <span>
+                {done}/{DAILY_QUESTION_COUNT}
+              </span>
+            </div>
+            <div className="h-3.5 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-sky-400 to-mq-success transition-all"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="mb-5 flex flex-col gap-2">
+            {modules.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center gap-3 rounded-mq-sm bg-white p-3 shadow-sm"
+              >
+                <span className="text-2xl">{m.icon}</span>
+                <div>
+                  <h3 className="text-sm font-extrabold">{m.label}</h3>
+                  <p className="text-xs text-mq-muted">
+                    {dailyProgress[m.id] ?? 0}/{m.dailyCount} câu
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-auto flex flex-col gap-3">
+            {allDone ? (
+              <div className="rounded-mq bg-green-100 py-4 text-center font-extrabold text-mq-success">
+                ✅ Đã hoàn thành đề hôm nay! ({done}/{DAILY_QUESTION_COUNT})
+              </div>
+            ) : (
+              <Link
+                href="/play"
+                className="flex min-h-[72px] items-center justify-center rounded-mq bg-gradient-to-br from-mq-primary to-sky-400 text-xl font-extrabold text-white active:scale-[0.97]"
+              >
+                ▶ LÀM BÀI HÔM NAY ({done}/{DAILY_QUESTION_COUNT})
+              </Link>
+            )}
+          </div>
+        </main>
+      </AppShell>
+    </div>
+  );
+}
