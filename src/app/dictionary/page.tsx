@@ -60,6 +60,13 @@ export default function DictionaryPage() {
     void speakEnglish(word);
   };
 
+  const clearSearch = () => {
+    setQuery("");
+    setEntry(null);
+    setError(null);
+    inputRef.current?.focus();
+  };
+
   return (
     <div className="page-wrap">
       <AppShell activeNav="dictionary">
@@ -68,17 +75,29 @@ export default function DictionaryPage() {
           <p className="mb-4 text-sm text-mq-muted">Tra nghĩa tiếng Việt, nghe phát âm và xem hình minh họa</p>
 
           <form onSubmit={onSubmit} className="mb-4 flex gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Nhập từ tiếng Anh..."
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              className="min-h-[48px] flex-1 rounded-mq-sm border-2 border-sky-100 bg-white px-4 text-base font-bold outline-none focus:border-mq-primary"
-            />
+            <div className="relative min-w-0 flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Nhập từ tiếng Anh..."
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="min-h-[48px] w-full rounded-mq-sm border-2 border-sky-100 bg-white py-2 pl-4 pr-10 text-base font-bold outline-none focus:border-mq-primary"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  aria-label="Xóa từ"
+                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-slate-200 text-sm font-extrabold text-slate-500 active:scale-95"
+                >
+                  ×
+                </button>
+              )}
+            </div>
             <button
               type="submit"
               disabled={loading || !query.trim()}
