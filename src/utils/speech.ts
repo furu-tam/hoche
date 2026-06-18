@@ -143,3 +143,35 @@ export async function speakFeedback(correct: boolean, explanation: string): Prom
   const intro = correct ? "Chính xác! " : "Chưa đúng. ";
   await speakText(intro + mathTextToSpeech(explanation), { rate: 0.85 });
 }
+
+function pickEnglishVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+  return (
+    voices.find((v) => v.lang === "en-US") ??
+    voices.find((v) => v.lang.startsWith("en")) ??
+    null
+  );
+}
+
+/** Đọc từ tiếng Anh (dùng cho từ điển) */
+export function speakEnglish(
+  text: string,
+  { rate = 0.85 }: { rate?: number } = {}
+): Promise<void> {
+  if (!isSpeechSupported() || !text.trim()) return Promise.resolve();
+
+  return ensureVoices().then(
+    () =>
+      new Promise((resolve) => {
+        stopSpeaking();
+        const utterance = new SpeechSynthesisUtterance(text.trim());
+        utterance.lang = "en-US";
+        utterance.rate = rate;
+        const voice = pickEnglishVoice();
+        if (voice) utterance.voice = voice;
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
+        window.speechSynthesis.speak(utterance);
+      })
+  );
+}
