@@ -5,6 +5,7 @@ import { AppShell } from "@/components/ui/AppShell";
 import { SpeakButton } from "@/components/ui/SpeakButton";
 import { lookupEnglishWord } from "@/services/dictionary";
 import type { DictionaryEntry } from "@/types/dictionary";
+import { partOfSpeechVi } from "@/utils/partOfSpeech";
 import { speakEnglish } from "@/utils/speech";
 
 const SUGGESTED_WORDS = ["hello", "apple", "school", "math", "friend", "happy", "read", "write"];
@@ -64,7 +65,7 @@ export default function DictionaryPage() {
       <AppShell activeNav="dictionary">
         <main className="flex flex-1 flex-col overflow-y-auto px-4 py-5">
           <h1 className="mb-1 text-2xl font-extrabold text-mq-primary">Từ điển Anh</h1>
-          <p className="mb-4 text-sm text-mq-muted">Tra nghĩa và nghe phát âm từ tiếng Anh</p>
+          <p className="mb-4 text-sm text-mq-muted">Tra nghĩa tiếng Việt, nghe phát âm và xem hình minh họa</p>
 
           <form onSubmit={onSubmit} className="mb-4 flex gap-2">
             <input
@@ -102,7 +103,7 @@ export default function DictionaryPage() {
 
           {loading && (
             <div className="rounded-mq-sm bg-white p-6 text-center text-sm font-bold text-mq-muted">
-              Đang tra từ...
+              Đang tra từ và dịch nghĩa...
             </div>
           )}
 
@@ -114,9 +115,23 @@ export default function DictionaryPage() {
 
           {entry && !loading && (
             <article className="rounded-mq bg-white p-4 shadow-sm">
-              <div className="mb-4 flex items-center gap-3">
+              {entry.imageUrl && (
+                <div className="mb-4 overflow-hidden rounded-mq-sm bg-sky-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={entry.imageUrl}
+                    alt={`Hình minh họa: ${entry.word}`}
+                    className="mx-auto max-h-44 w-full object-cover"
+                  />
+                </div>
+              )}
+
+              <div className="mb-4 flex items-start gap-3">
                 <div className="flex-1">
                   <h2 className="text-2xl font-extrabold capitalize text-slate-800">{entry.word}</h2>
+                  {entry.wordVi && (
+                    <p className="mt-0.5 text-lg font-extrabold text-mq-primary">→ {entry.wordVi}</p>
+                  )}
                   {entry.phonetic && (
                     <p className="text-sm font-semibold text-mq-muted">{entry.phonetic}</p>
                   )}
@@ -132,17 +147,30 @@ export default function DictionaryPage() {
               <div className="flex flex-col gap-4">
                 {entry.meanings.map((meaning, i) => (
                   <section key={`${meaning.partOfSpeech}-${i}`}>
-                    <h3 className="mb-2 inline-block rounded-full bg-sky-100 px-3 py-0.5 text-xs font-extrabold uppercase text-mq-primary">
-                      {meaning.partOfSpeech}
+                    <h3 className="mb-2 inline-block rounded-full bg-sky-100 px-3 py-0.5 text-xs font-extrabold text-mq-primary">
+                      {partOfSpeechVi(meaning.partOfSpeech)}
                     </h3>
-                    <ol className="flex flex-col gap-2 pl-1">
+                    <ol className="flex flex-col gap-3 pl-1">
                       {meaning.definitions.map((def, j) => (
                         <li key={j} className="text-sm leading-relaxed">
                           <span className="font-bold text-slate-700">{j + 1}. </span>
-                          {def.definition}
-                          {def.example && (
-                            <p className="mt-1 pl-4 text-xs italic text-mq-muted">
-                              &ldquo;{def.example}&rdquo;
+                          <span className="font-bold text-slate-800">
+                            {def.definitionVi ?? def.definition}
+                          </span>
+                          {def.definitionVi && (
+                            <p className="mt-0.5 text-xs text-mq-muted">{def.definition}</p>
+                          )}
+                          {(def.exampleVi || def.example) && (
+                            <p className="mt-1.5 rounded-mq-sm bg-amber-50 px-3 py-2 text-xs">
+                              <span className="font-bold text-mq-accent">Ví dụ: </span>
+                              <span className="italic text-slate-700">
+                                {def.exampleVi ? `“${def.exampleVi}”` : def.example && `“${def.example}”`}
+                              </span>
+                              {def.exampleVi && def.example && (
+                                <span className="mt-1 block text-mq-muted not-italic">
+                                  ({def.example})
+                                </span>
+                              )}
                             </p>
                           )}
                         </li>

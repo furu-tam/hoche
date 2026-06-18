@@ -1,6 +1,8 @@
 export interface DictionaryDefinition {
   definition: string;
+  definitionVi?: string;
   example?: string;
+  exampleVi?: string;
 }
 
 export interface DictionaryMeaning {
@@ -10,8 +12,10 @@ export interface DictionaryMeaning {
 
 export interface DictionaryEntry {
   word: string;
+  wordVi?: string;
   phonetic?: string;
   audioUrl?: string;
+  imageUrl?: string;
   meanings: DictionaryMeaning[];
 }
 
